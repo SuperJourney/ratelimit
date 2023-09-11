@@ -18,8 +18,6 @@ type TokenBucketLimiter struct {
 	lastRequestTime time.Time     // 最后一次令牌提供时间
 
 	logger *log.Logger
-
-	TotalToken time.Duration
 }
 
 type OptFn func(*TokenBucketLimiter)
@@ -81,8 +79,7 @@ func (rl *TokenBucketLimiter) Request() error {
 		rl.lastRequestTime = now
 
 		log.Println("request pass, cur token(ms): ", rl.token)
-		// debug
-		rl.TotalToken += perUnit
+
 		return nil
 	} else {
 		// log.Println("request err: token is 0")

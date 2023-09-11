@@ -6,15 +6,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	ratelimit "github.com/SuperJourney/ratelimit/token_bucket"
+	ratelimit "github.com/SuperJourney/ratelimit/leaky_bucket"
 )
 
 func main() {
 	var per int64 = 4
 	var unit = 100 * time.Millisecond
 	var succCount int64 = 0
-	var size int64 = 10
-	rl := ratelimit.NewTokenBucketLimiter(per, unit, ratelimit.WithSize(size))
+	rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(50*time.Millisecond))
 
 	before := time.Now().UnixNano()
 
@@ -45,5 +44,5 @@ func main() {
 	g := time.Now().UnixNano() - before
 	log.Println("花费时长(ms):", g/int64(time.Millisecond))
 	log.Println("成功数量:", succCount)
-	log.Println("预计成功数量:", g/int64(unit/time.Duration(per))+size)
+	log.Println("预计成功数量:", g/int64(unit/time.Duration(per)))
 }

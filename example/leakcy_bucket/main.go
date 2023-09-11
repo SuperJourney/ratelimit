@@ -1,29 +1,47 @@
 package main
 
 import (
-	"fmt"
-	ratelimit "ratelimit/leaky_bucket"
+	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	ratelimit "github.com/SuperJourney/ratelimit/leaky_bucket"
 )
 
 func main() {
-	rl := ratelimit.NewLeakyBucketLimiter(10, 1*time.Millisecond)
+	var per int64 = 4
+	var unit = 100 * time.Millisecond
+	var succCount int64 = 0
+	rl := ratelimit.NewLeakyBucketLimiter(per, unit)
+
 	before := time.Now().UnixNano()
-	a := &sync.WaitGroup{}
-	var errCount int64 = 0
-	for i := 0; i < 100; i++ {
-		a.Add(1)
+
+	wait := &sync.WaitGroup{}
+	// 10个协程请求
+	for i := 0; i < 10; i++ {
+		wait.Add(1)
 		go func() {
-			defer a.Done()
-			if err := rl.Request(); err != nil {
-				atomic.AddInt64(&errCount, 1)
+			defer wait.Done()
+			ticker := time.After(1 * time.Second)
+			for {
+				select {
+				case <-ticker:
+					log.Println("time on")
+					return
+				default:
+					if err := rl.Request(); err != nil {
+					} else {
+						atomic.AddInt64(&succCount, 1)
+					}
+				}
 			}
 		}()
 	}
-	a.Wait()
+	wait.Wait()
+
 	g := time.Now().UnixNano() - before
-	fmt.Println(g / int64(time.Millisecond)) // 120
-	fmt.Println(errCount)
+	log.Println("花费时长(ms):", g/int64(time.Millisecond))
+	log.Println("成功数量:", succCount)
+	log.Println("预计成功数量:", g/int64(unit/time.Duration(per)))
 }

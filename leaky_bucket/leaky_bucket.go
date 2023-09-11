@@ -13,10 +13,10 @@ import (
 var ErrTimeOut = errors.New("time out")
 
 type LeakyBucketLimiter struct {
-	request int64         // 当前排队数量
-	per     int64         // 单位时间次数
-	unit    time.Duration // 单位时间
-	lock    sync.Mutex
+	waitR int64         // 当前排队数量
+	per   int64         // 单位时间次数
+	unit  time.Duration // 单位时间
+	lock  sync.Mutex
 
 	slackTime time.Duration
 
@@ -63,8 +63,8 @@ func (rl *LeakyBucketLimiter) Request() error {
 	defer rl.Unlock()
 
 	now := time.Now()
-
 	if rl.lastRequestTime.IsZero() {
+		rl.logger.Printf("pass frist request, now : %v", now)
 		rl.lastRequestTime = now
 		return nil
 	}
@@ -96,20 +96,20 @@ func (rl *LeakyBucketLimiter) Request() error {
 }
 
 func (rl *LeakyBucketLimiter) Lock() {
-	atomic.AddInt64(&rl.request, 1)
+	atomic.AddInt64(&rl.waitR, 1)
 	rl.lock.Lock()
 }
 func (rl *LeakyBucketLimiter) Unlock() {
 	rl.lock.Unlock()
-	atomic.AddInt64(&rl.request, -1)
+	atomic.AddInt64(&rl.waitR, -1)
 }
 
 func (rl *LeakyBucketLimiter) CheckTimeOut() error {
 	if rl.timeOut <= 0 {
 		return nil
 	}
-	if int(rl.request)*int(rl.unit)/int(rl.per) > int(rl.timeOut) {
-		fmt.Println(int(rl.request) * int(rl.unit) / int(rl.per))
+	if int(rl.waitR)*int(rl.unit)/int(rl.per) > int(rl.timeOut) {
+		fmt.Println(int(rl.waitR) * int(rl.unit) / int(rl.per))
 		return ErrTimeOut
 	}
 	return nil
