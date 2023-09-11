@@ -11,7 +11,7 @@
 
 漏洞原理：
 
-![漏桶原理](doc/1691031553209.png)
+![漏桶原理](doc/p1.png)
 
 实现：
 
@@ -20,6 +20,16 @@
 - 
 - ![img](./doc/p2.png)
 
+  Examples
+
+```golang
+
+
+rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(50*time.Millisecond))
+	rl.Request()
+
+```
+
 ### 漏桶分布式
 
     分布式版本主要是在上述原理下，将 lastReqeustTime,slackTime 等内存变量转换为cache的方式；
@@ -27,10 +37,3 @@
 ### 令牌
 
 原理同漏桶，一个限制漏出数量，一个限制令牌生产数量，不做过多赘述；
-
-## Examples
-
-```
-	rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(50*time.Millisecond))
-	rl.Request()
-```

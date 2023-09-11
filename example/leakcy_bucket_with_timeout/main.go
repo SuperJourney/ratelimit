@@ -13,8 +13,7 @@ func main() {
 	var per int64 = 4
 	var unit = 100 * time.Millisecond
 	var succCount int64 = 0
-	rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(50*time.Millisecond))
-
+	rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(1*time.Millisecond))
 	before := time.Now().UnixNano()
 
 	wait := &sync.WaitGroup{}

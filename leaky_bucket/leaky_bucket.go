@@ -13,18 +13,16 @@ import (
 var ErrTimeOut = errors.New("time out")
 
 type LeakyBucketLimiter struct {
-	waitR int64         // 当前排队数量
-	per   int64         // 单位时间次数
-	unit  time.Duration // 单位时间
-	lock  sync.Mutex
-
-	slackTime time.Duration
-
-	lastRequestTime time.Time
-
+	per     int64         // 单位时间次数
+	unit    time.Duration // 单位时间
 	timeOut time.Duration
+	logger  *log.Logger
 
-	logger *log.Logger
+	lock sync.Mutex
+
+	slackTime       time.Duration
+	lastRequestTime time.Time
+	waitR           int64 // 当前排队数量
 }
 
 type OptFn func(*LeakyBucketLimiter)
@@ -71,11 +69,11 @@ func (rl *LeakyBucketLimiter) Request() error {
 
 	nextRequestTime := rl.lastRequestTime.Add(time.Duration(int64(rl.unit) / rl.per))
 
-	if rl.slackTime > 0 {
+	if rl.slackTime >= time.Duration(int64(rl.unit)/rl.per) {
 		nextRequestTime = nextRequestTime.Add(-rl.slackTime)
+		rl.slackTime -= time.Duration(int64(rl.unit) / rl.per)
 	}
 
-	rl.slackTime -= time.Duration(int64(rl.unit) / rl.per)
 	rl.slackTime += now.Sub(rl.lastRequestTime)
 	if rl.slackTime > rl.unit {
 		rl.slackTime = rl.unit
