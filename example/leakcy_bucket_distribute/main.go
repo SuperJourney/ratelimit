@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	var per int64 = 4
+	var per int64 = 8
 	var unit = 100 * time.Millisecond
 	var succCount int64 = 0
 	before := time.Now().UnixNano()
@@ -29,32 +29,32 @@ func main() {
 				Addr:     "127.0.0.1:6379",
 				Password: "123",
 			})
-			defer redisClient.Close()
+			// defer redisClient.Close()
 			if err := redisClient.Ping(ctx).Err(); err != nil {
 				log.Panicln("err", err)
 			}
 
-			rl := ratelimit.NewDistriLeackyBucketLimiter(per, unit, redisClient, ratelimit.WithDistributeTimeOut(1*time.Millisecond))
+			rl := ratelimit.NewDistriLeackyBucketLimiter(per, unit, 100*time.Millisecond, redisClient)
 			// defer func() {
 			// 	err := rl.UnsafeReset(ctx)
 			// 	if err != nil {
 			// 		log.Panicln("err", err)
 			// 	}
 			// }()
-			ticker := time.After(1 * time.Second)
+			ticker := time.After(10 * time.Second)
 			for {
 				select {
 				case <-ticker:
 					log.Println("time on")
 					return
 				default:
-					time.Sleep(20 * time.Millisecond)
 					go func() {
 						if err := rl.Request(context.Background()); err != nil {
 						} else {
 							atomic.AddInt64(&succCount, 1)
 						}
 					}()
+					time.Sleep(2 * time.Millisecond)
 				}
 			}
 		}()
@@ -65,4 +65,5 @@ func main() {
 	log.Println("花费时长(ms):", g/int64(time.Millisecond))
 	log.Println("成功数量:", succCount)
 	log.Println("预计成功数量:", g/int64(unit/time.Duration(per)))
+	time.Sleep(1 * time.Second)
 }
