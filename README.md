@@ -34,6 +34,8 @@ rl := ratelimit.NewLeakyBucketLimiter(per, unit, ratelimit.WithTimeOut(50*time.M
 
     分布式版本主要是在上述原理下，将 lastReqeustTime,slackTime 等内存变量转换为cache的方式；
 
+    容灾设计： 使用漏桶分布式必须设置超时时间， 所有的key在3倍超时时间内没有其他请求会自动清空；
+
 ### 令牌
 
 原理同漏桶，一个限制漏出数量，一个限制令牌生产数量，不做过多赘述；
